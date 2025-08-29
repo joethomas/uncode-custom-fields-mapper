@@ -4,6 +4,9 @@
  * Description: Adds a settings page to map custom fields to Uncode options with optional prefix/suffix.
  * Author: Joe Thomas
  * Version: 1.0
+ * 
+ * Update URI: joethomas/uncode-custom-fields-mapper
+ * GitHub Plugin URI: https://github.com/joethomas/uncode-custom-fields-mapper
  */
 
 /**
