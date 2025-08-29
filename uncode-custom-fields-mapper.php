@@ -3,7 +3,7 @@
 	Plugin Name: Uncode Custom Fields Mapper
 	Description: Adds a settings page to map custom fields to Uncode options with optional prefix/suffix.
 	Author: Joe Thomas
-	Version: 1.0
+	Version: 1.0.1
 	
 	GitHub Plugin URI: joethomas/uncode-custom-fields-mapper
 	Primary Branch: main
@@ -200,3 +200,32 @@ add_filter( 'uncode_ot_get_option', function ( $val, $option_id ) {
 
 	return $val;
 }, 10, 2 );
+
+
+/* Styles
+==============================================================================*/
+
+// Admin CSS for Page Options chips on the post editor screens
+add_action( 'admin_enqueue_scripts', function( $hook ) {
+	// Only load on the classic post editor screens
+	if ( $hook !== 'post.php' && $hook !== 'post-new.php' ) {
+		return;
+	}
+
+	$css = '
+		#poststuff .format-setting-label .label label {
+			padding: 2px 6px 3px;
+			vertical-align: 5%;
+			background-color: #f0f0f0;
+			border-radius: 10px;
+			font-size: .675em;
+			color: #252b31;
+			text-transform: none;
+		}
+	';
+
+	// Register a handle with no src and attach inline CSS
+	wp_register_style( 'ucfm-admin', false );
+	wp_enqueue_style( 'ucfm-admin' );
+	wp_add_inline_style( 'ucfm-admin', $css );
+});
