@@ -5,9 +5,8 @@
 	Author: Joe Thomas
 	Version: 1.0
 	
-	Update URI: joethomas/uncode-custom-fields-mapper
-	GitHub Plugin URI: https://github.com/joethomas/uncode-custom-fields-mapper
-	GitHub Branch: master
+	GitHub Plugin URI: joethomas/uncode-custom-fields-mapper
+	Primary Branch: main
 */
 
 // Prevent direct file access
