@@ -3,7 +3,7 @@
 	Plugin Name: Uncode Custom Fields Mapper
 	Description: Adds a settings page to map custom fields to Uncode options with optional prefix/suffix.
 	Author: Joe Thomas
-	Version: 1.0.1
+	Version: 1.0.2
 	
 	GitHub Plugin URI: joethomas/uncode-custom-fields-mapper
 	Primary Branch: main
@@ -205,27 +205,57 @@ add_filter( 'uncode_ot_get_option', function ( $val, $option_id ) {
 /* Styles
 ==============================================================================*/
 
-// Admin CSS for Page Options chips on the post editor screens
+// Admin CSS/JS for Page Options chips on the post editor screens
 add_action( 'admin_enqueue_scripts', function( $hook ) {
 	// Only load on the classic post editor screens
-	if ( $hook !== 'post.php' && $hook !== 'post-new.php' ) {
+	if ($hook !== 'post.php' && $hook !== 'post-new.php') {
 		return;
 	}
 
+	// CSS (your chip styling)
 	$css = '
-		#poststuff .format-setting-label .label label {
-			padding: 2px 6px 3px;
-			vertical-align: 5%;
-			background-color: #f0f0f0;
-			border-radius: 10px;
-			font-size: .675em;
-			color: #252b31;
-			text-transform: none;
-		}
+	#poststuff .format-setting-label .label label {
+		padding: 2px 6px 3px;
+		vertical-align: 5%;
+		background-color: #f0f0f0;
+		border-radius: 10px;
+		font-size: .675em;
+		color: #252b31;
+		text-transform: none;
+	}
 	';
 
-	// Register a handle with no src and attach inline CSS
-	wp_register_style( 'ucfm-admin', false );
-	wp_enqueue_style( 'ucfm-admin' );
-	wp_add_inline_style( 'ucfm-admin', $css );
+	// JS: convert [text] => <label>text</label>
+	$js = <<<JS
+document.addEventListener('DOMContentLoaded', function () {
+  var scope = document.getElementById('poststuff');
+  if (!scope) return;
+
+  var nodes = scope.querySelectorAll('.format-setting-label .label');
+  nodes.forEach(function (node) {
+    // Skip if there is already a <label> to avoid double-wrapping
+    // (We still process text nodes to allow multiple chips.)
+    node.childNodes.forEach(function (n) {
+      if (n.nodeType === Node.TEXT_NODE) {
+        var txt = n.textContent;
+        if (txt && txt.indexOf('[') !== -1) {
+          // Replace all [something] with <label>something</label>
+          var frag = document.createElement('span');
+          frag.innerHTML = txt.replace(/\\s*\\[(.+?)\\]\\s*/g, ' <label>$1</label> ');
+          node.replaceChild(frag, n);
+        }
+      }
+    } );
+  } );
+} );
+JS;
+
+	// Enqueue a handle with inline CSS/JS
+	wp_register_style('ucfm-admin', false);
+	wp_enqueue_style('ucfm-admin');
+	wp_add_inline_style('ucfm-admin', $css);
+
+	wp_register_script('ucfm-admin', false, [], false, true);
+	wp_enqueue_script('ucfm-admin');
+	wp_add_inline_script('ucfm-admin', $js);
 });
