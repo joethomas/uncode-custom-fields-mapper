@@ -1,56 +1,67 @@
 <?php
-/**
- * Plugin Name: Uncode Custom Fields Mapper
- * Description: Adds a settings page to map custom fields to Uncode options with optional prefix/suffix.
- * Author: Joe Thomas
- * Version: 1.0
- * 
- * Update URI: joethomas/uncode-custom-fields-mapper
- * GitHub Plugin URI: https://github.com/joethomas/uncode-custom-fields-mapper
- */
+/*
+	Plugin Name: Uncode Custom Fields Mapper
+	Description: Adds a settings page to map custom fields to Uncode options with optional prefix/suffix.
+	Author: Joe Thomas
+	Version: 1.0
+	
+	Update URI: joethomas/uncode-custom-fields-mapper
+	GitHub Plugin URI: https://github.com/joethomas/uncode-custom-fields-mapper
+	GitHub Branch: master
+*/
 
-/**
- * Hard dependency on Uncode theme.
- */
-function ucfm_is_uncode_active() {
+// Prevent direct file access
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+
+/* Dependency & Activation
+==============================================================================*/
+
+// Determine whether or not Uncode theme is active.
+function ucfm_is_uncode_active(): bool {
 	return ( 'uncode' === get_template() );
 }
-	$parent = $theme->parent();
-	if ( $parent && ( strtolower( $parent->get( 'Stylesheet' ) ) === 'uncode' || strtolower( $parent->get( 'Template' ) ) === 'uncode' ) ) {
-		return true;
+
+// On activation, deactivate if Uncode theme is not active.
+function ucfm_deactivate_self_with_notice( $message, $wp_die = false ) {
+	if ( ! function_exists( 'deactivate_plugins' ) ) {
+		require_once ABSPATH . 'wp-admin/includes/plugin.php';
 	}
-	return false;
+	deactivate_plugins( plugin_basename( __FILE__ ) );
+
+	if ( $wp_die ) {
+		wp_die( $message, 'Plugin dependency check', [ 'back_link' => true ] );
+	} else {
+		add_action( 'admin_notices', function () use ( $message ) {
+			echo '<div class="notice notice-error"><p>' . wp_kses_post( $message ) . '</p></div>';
+		} );
+	}
 }
 
-register_activation_hook( __FILE__, 'ucfm_on_activation' );
-function ucfm_on_activation() {
-	if ( 'uncode' !== get_template() ) {
-		if ( ! function_exists( 'deactivate_plugins' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/plugin.php';
-		}
-		deactivate_plugins( plugin_basename( __FILE__ ) );
-		wp_die( '<p><strong>Uncode Custom Fields Mapper</strong> requires the <em>Uncode</em> parent theme to be active before activation.</p>', 'Plugin dependency check', [ 'back_link' => true ] );
+// Block activation if Uncode isn't active right now.
+register_activation_hook( __FILE__, function () {
+	if ( ! ucfm_is_uncode_active() ) {
+		ucfm_deactivate_self_with_notice(
+			'<strong>Uncode Custom Fields Mapper</strong> requires the <em>Uncode</em> parent theme to be active before activation.',
+			true // wp_die to block activation
+		);
 	}
-}
+ });
 
+// Guard every load in case Uncode is switched later.
 if ( ! ucfm_is_uncode_active() ) {
-	add_action( 'admin_init', function () {
-		if ( ! current_user_can( 'activate_plugins' ) ) {
-			return;
-		}
-		if ( ! function_exists( 'deactivate_plugins' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/plugin.php';
-		}
-		deactivate_plugins( plugin_basename( __FILE__ ) );
-	} );
-
-	add_action( 'admin_notices', function () {
-		echo '<div class="notice notice-error"><p><strong>Uncode Custom Fields Mapper</strong> requires the <em>Uncode</em> theme (parent or child) to be active. The plugin has been deactivated.</p></div>';
-	} );
-
-	// Stop loading rest of plugin if Uncode is not active.
-	return;
+	ucfm_deactivate_self_with_notice(
+		'<strong>Uncode Custom Fields Mapper</strong> requires the <em>Uncode</em> parent theme. The plugin has been deactivated.'
+	);
+	return; // Stop loading the rest of the plugin.
 }
+
+
+/* Admin Menu
+==============================================================================*/
+
 // Register admin menu
 add_action( 'admin_menu', function () {
 	$parent = 'uncode';
@@ -70,7 +81,11 @@ add_action( 'admin_menu', function () {
 	);
 }, 99 );
 
-// Save settings
+
+/* Settings Page
+==============================================================================*/
+
+// Save settings.
 add_action( 'admin_init', function () {
 	if ( ! current_user_can( 'manage_options' ) ) {
 		return;
@@ -96,6 +111,7 @@ add_action( 'admin_init', function () {
 	}
 } );
 
+// Render the settings page.
 function ucfm_render_admin_page() {
 	global $wpdb;
 
